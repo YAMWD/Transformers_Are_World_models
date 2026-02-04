@@ -25,7 +25,8 @@ def _small_cfg(*, z_dim: int = 32, action_dim: int = 3, predict_done: bool = Fal
 def test_visual_forward_shapes_and_range() -> None:
     model = ViTWorldModel(_small_cfg(), with_decoder=True)
     x = torch.rand(2, 3, 64, 64)
-    z, mu, logsigma, recon = model.forward_visual(x, sample=True)
+    with torch.no_grad():
+        z, mu, logsigma, recon = model.forward_visual(x, sample=True)
     assert z.shape == (2, 32)
     assert mu.shape == (2, 32)
     assert logsigma.shape == (2, 32)
@@ -53,4 +54,3 @@ def test_dynamics_done_head_optional() -> None:
     _pi, _mu, _ls, done, _y = model.forward_dynamics(z_seq, a_seq)
     assert done is not None
     assert done.shape == (2, 7)
-

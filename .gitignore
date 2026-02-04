@@ -15,11 +15,11 @@ __pycache__/
 venv/
 .python-version
 
-# Data & outputs
-data/
-outputs/
-checkpoints/
-wandb/
+# Data & outputs (repo-root only)
+/data/
+/outputs/
+/checkpoints/
+/wandb/
 
 # Media
 *.mp4

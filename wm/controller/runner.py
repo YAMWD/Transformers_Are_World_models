@@ -54,41 +54,43 @@ def rollout_real_env(
     Env API expected: reset()->obs, step(action)->(obs,reward,done,info)
     """
     model.eval()
-    obs = env.reset()
+    with torch.no_grad():
+        obs = env.reset()
 
-    # Init z0
-    frame0 = obs_to_frame_u8(obs, size=model.cfg.image_size)
-    x0 = torch.from_numpy(frame0).permute(2, 0, 1).unsqueeze(0).float().div(255.0).to(device)
-    z0, _mu0, _ls0 = model.encode(x0, sample=False)
-    z_t = z0[0]
+        # Init z0
+        frame0 = obs_to_frame_u8(obs, size=model.cfg.image_size)
+        x0 = torch.from_numpy(frame0).permute(2, 0, 1).unsqueeze(0).float().div(255.0).to(device)
+        z0, _mu0, _ls0 = model.encode(x0, sample=False)
+        z_t = z0[0]
     h_t = torch.zeros(model.cfg.d_model, device=device)
     hist = WMHistory.empty()
 
     total = 0.0
     for _t in range(max_steps):
-        z_np = z_t.detach().cpu().numpy().astype(np.float32, copy=False)
-        h_np = h_t.detach().cpu().numpy().astype(np.float32, copy=False)
-        raw = controller_act(controller_params, controller_spec, z=z_np, h=h_np)
-        a = map_action(raw)
+        with torch.no_grad():
+            z_np = z_t.detach().cpu().numpy().astype(np.float32, copy=False)
+            h_np = h_t.detach().cpu().numpy().astype(np.float32, copy=False)
+            raw = controller_act(controller_params, controller_spec, z=z_np, h=h_np)
+            a = map_action(raw)
 
-        obs_next, reward, done, _info = env.step(a)
-        total += float(reward)
+            obs_next, reward, done, _info = env.step(a)
+            total += float(reward)
 
-        # Teacher-force next z from real obs
-        frame_next = obs_to_frame_u8(obs_next, size=model.cfg.image_size)
-        x_next = torch.from_numpy(frame_next).permute(2, 0, 1).unsqueeze(0).float().div(255.0).to(device)
-        z_next, _mu, _ls = model.encode(x_next, sample=False)
+            # Teacher-force next z from real obs
+            frame_next = obs_to_frame_u8(obs_next, size=model.cfg.image_size)
+            x_next = torch.from_numpy(frame_next).permute(2, 0, 1).unsqueeze(0).float().div(255.0).to(device)
+            z_next, _mu, _ls = model.encode(x_next, sample=False)
 
-        # Update model memory using (z_t, a_t)
-        a_t = torch.from_numpy(np.asarray(a, dtype=np.float32)).to(device).view(model.cfg.action_dim)
-        hist.append(z=z_t, a=a_t, l_ctx=model.cfg.l_ctx)
-        h_next = hist.compute_h_next(model)
+            # Update model memory using (z_t, a_t)
+            a_t = torch.from_numpy(np.asarray(a, dtype=np.float32)).to(device).view(model.cfg.action_dim)
+            hist.append(z=z_t, a=a_t, l_ctx=model.cfg.l_ctx)
+            h_next = hist.compute_h_next(model)
 
-        z_t = z_next[0]
-        h_t = h_next
+            z_t = z_next[0]
+            h_t = h_next
 
-        if done:
-            break
+            if done:
+                break
     return float(total)
 
 
