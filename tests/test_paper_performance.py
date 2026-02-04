@@ -67,12 +67,9 @@ def test_paper_target_carracing() -> None:
     )
     episodes = int(os.environ.get("PAPER_EVAL_EPISODES", "100"))
 
-    if not ckpt_path.exists() or not ctrl_path.exists():
-        pytest.skip("Missing trained artifacts; train and save to checkpoints/ to run this test.")
-
     device = default_device()
-    if device.type == "cpu":
-        pytest.skip("Paper target eval is too slow on CPU; set WM_DEVICE=cuda and rerun on a GPU node.")
+    assert ckpt_path.exists(), f"Missing trained checkpoint: {ckpt_path}"
+    assert ctrl_path.exists(), f"Missing trained controller: {ctrl_path}"
 
     cfg, model = _build_model_from_config(cfg_path, device=device)
     ckpt = load_checkpoint(ckpt_path)
@@ -80,14 +77,10 @@ def test_paper_target_carracing() -> None:
 
     params, spec = _load_controller(ctrl_path)
 
-    try:
-        from wm.envs.carracing import make_carracing
+    from wm.envs.carracing import make_carracing
 
-        env_id = str(cfg["data"]["env_id"])
-        env = GymCompatWrapper(make_carracing(env_id))
-    except Exception as e:
-        pytest.skip(f"Could not create CarRacing env: {e}")
-
+    env_id = str(cfg["data"]["env_id"])
+    env = GymCompatWrapper(make_carracing(env_id))
     scores = [
         rollout_real_env(
             env=env,
@@ -123,12 +116,9 @@ def test_paper_target_takecover_dream_and_real() -> None:
     episodes = int(os.environ.get("PAPER_EVAL_EPISODES", "100"))
     dream_episodes = int(os.environ.get("PAPER_DREAM_EVAL_EPISODES", "256"))
 
-    if not ckpt_path.exists() or not ctrl_path.exists():
-        pytest.skip("Missing trained artifacts; train and save to checkpoints/ to run this test.")
-
     device = default_device()
-    if device.type == "cpu":
-        pytest.skip("Paper target eval is too slow on CPU; set WM_DEVICE=cuda and rerun on a GPU node.")
+    assert ckpt_path.exists(), f"Missing trained checkpoint: {ckpt_path}"
+    assert ctrl_path.exists(), f"Missing trained controller: {ctrl_path}"
 
     cfg, model = _build_model_from_config(cfg_path, device=device)
     ckpt = load_checkpoint(ckpt_path)
@@ -137,19 +127,16 @@ def test_paper_target_takecover_dream_and_real() -> None:
     params, spec = _load_controller(ctrl_path)
 
     # Dream eval (paper: train in dream env at tau=1.15).
-    try:
-        idx = EpisodeIndex.build(Path(cfg["data"]["root"]))
-        train_idx, _ = idx.split(val_frac=0.1, seed=int(cfg.get("seed", 0)))
-        tau = float(cfg.get("dream", {}).get("tau", 1.15))
-        dream_env = DreamEnv(
-            model=model,
-            episode_paths=list(train_idx.episode_paths),
-            tau=tau,
-            device=device,
-            max_steps=2100,
-        )
-    except Exception as e:
-        pytest.skip(f"Could not build dream env: {e}")
+    idx = EpisodeIndex.build(Path(cfg["data"]["root"]))
+    train_idx, _ = idx.split(val_frac=0.1, seed=int(cfg.get("seed", 0)))
+    tau = float(cfg.get("dream", {}).get("tau", 1.15))
+    dream_env = DreamEnv(
+        model=model,
+        episode_paths=list(train_idx.episode_paths),
+        tau=tau,
+        device=device,
+        max_steps=2100,
+    )
 
     _dream_scores = [
         rollout_dream_env(
@@ -163,12 +150,9 @@ def test_paper_target_takecover_dream_and_real() -> None:
     ]
 
     # Real transfer eval.
-    try:
-        from wm.envs.vizdoom_takecover import TakeCoverConfig, TakeCoverEnv
+    from wm.envs.vizdoom_takecover import TakeCoverConfig, TakeCoverEnv
 
-        real_env = TakeCoverEnv(TakeCoverConfig(frame_size=int(cfg["data"].get("frame_size", 64))))
-    except Exception as e:
-        pytest.skip(f"Could not create real TakeCover env: {e}")
+    real_env = TakeCoverEnv(TakeCoverConfig(frame_size=int(cfg["data"].get("frame_size", 64))))
 
     real_scores = [
         rollout_real_env(
@@ -189,4 +173,3 @@ def test_paper_target_takecover_dream_and_real() -> None:
 
     mean = float(np.mean(real_scores)) if real_scores else float("nan")
     assert mean >= PAPER_TARGET_TAKECOVER_STEPS
-
