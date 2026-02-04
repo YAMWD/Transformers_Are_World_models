@@ -1,0 +1,31 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+*.egg-info/
+.ruff_cache/
+.mypy_cache/
+
+# Editor / local settings
+.vscode/
+
+# Environments / tooling
+.venv/
+venv/
+.python-version
+
+# Data & outputs
+data/
+outputs/
+checkpoints/
+wandb/
+
+# Media
+*.mp4
+*.gif
+*.png
+
+# Local VizDoom artifacts
+_vizdoom.ini
+_vizdoom/

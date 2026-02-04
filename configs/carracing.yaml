@@ -1,0 +1,42 @@
+# Paper-faithful defaults for CarRacing (Ha & Schmidhuber 2018), adapted to single ViT-WM.
+
+seed: 0
+
+data:
+  env_id: "CarRacing-v3"          # gymnasium default; older v0/v2 are deprecated
+  root: "data/carracing"
+  episodes: 10000
+  frame_size: 64
+
+model:
+  z_dim: 32
+  action_dim: 3                   # steer, gas, brake
+  patch_size: 8
+  d_model: 256
+  depth: 8
+  heads: 8
+  mlp_ratio: 4
+  dropout: 0.1
+  l_ctx: 256
+  mdn:
+    k: 5
+
+train:
+  batch_size_frames: 256
+  batch_size_seq: 128
+  seq_len: 257                     # l_ctx + 1
+  lr: 3e-4
+  weight_decay: 0.01
+  epochs_v_warmup: 1
+  epochs_joint: 20
+  alpha_v_in_joint: 0.1
+  kl_anneal_frac: 0.1
+
+controller:
+  mode: "real_env"                 # CarRacing trains C in the real env
+  variant: "z_plus_h"              # z_only | z_plus_h | hidden40
+  population: 64
+  eval_rollouts: 16
+  gens: 2000
+  eval_every: 25
+  eval_episodes: 100

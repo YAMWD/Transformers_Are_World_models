@@ -1,0 +1,49 @@
+# Paper-faithful defaults for VizDoom TakeCover (Ha & Schmidhuber 2018), adapted to single ViT-WM.
+
+seed: 0
+
+data:
+  scenario: "take_cover"           # scenario name used by our wrapper
+  root: "data/takecover"
+  episodes: 10000
+  frame_size: 64
+
+model:
+  z_dim: 64
+  action_dim: 1                    # scalar in {-1,0,+1}
+  patch_size: 8
+  d_model: 256
+  depth: 8
+  heads: 8
+  mlp_ratio: 4
+  dropout: 0.1
+  l_ctx: 256
+  mdn:
+    k: 5
+  done_head: true
+
+train:
+  batch_size_frames: 256
+  batch_size_seq: 128
+  seq_len: 257                     # l_ctx + 1
+  lr: 3e-4
+  weight_decay: 0.01
+  epochs_v_warmup: 1
+  epochs_joint: 20
+  alpha_v_in_joint: 0.1
+  kl_anneal_frac: 0.1
+
+dream:
+  tau: 1.15
+  tau_ablation: [1.0, 1.15, 1.3]
+
+controller:
+  mode: "dream_env"                # TakeCover trains C in dream env
+  variant: "z_plus_h"              # z_only | z_plus_h | hidden40
+  population: 64
+  eval_rollouts: 16
+  gens: 3000
+  eval_every: 25
+  dream_eval_episodes: 256
+  real_eval_episodes: 100
+

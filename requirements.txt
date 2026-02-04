@@ -1,0 +1,15 @@
+# Core
+numpy>=1.24
+torch>=2.1
+torchvision>=0.16
+einops>=0.7
+omegaconf>=2.3
+tqdm>=4.66
+
+# Optional (envs)
+# gymnasium[box2d]>=0.29   # CarRacing (often installs Box2D)
+# vizdoom>=1.2             # TakeCover
+
+# Optional (plotting)
+# matplotlib>=3.8
+

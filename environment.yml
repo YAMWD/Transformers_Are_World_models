@@ -1,0 +1,20 @@
+name: vit_wm
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy>=1.24
+  - einops>=0.7
+  - omegaconf>=2.3
+  - tqdm>=4.66
+  - pytest>=7
+  - pytorch=2.5.1
+  - torchvision=0.20.1
+  - pytorch-cuda=12.1
+  - pip:
+      - -e .
+      - gymnasium[box2d]==1.2.3
+      - vizdoom==1.2.4
